@@ -6,31 +6,32 @@ import org.opencv.core.Size;
 
 import org.opencv.core.Mat;
 import org.opencv.core.CvType;
+import processing.video.*;
 
 //change
 
 OpenCV opencv;
 PImage src;
-PImage card;
-int cardWidth = 250;
-int cardHeight = 350;
+PImage focus;
+Capture cam;
+int focusWidth = 480;
+int focusHeight = 480;
 
 SelectionWindow window = new SelectionWindow();
 
 Contour contour;
 
 void setup() {
-  src = loadImage("cards.png");
-  size(src.width + cardWidth, src.height);
-  opencv = new OpenCV(this, src);
+  size(640+focusWidth, 480);
+  cam = new Capture(this, 640, 480);
+  // Start capturing the images from the camera
+  cam.start();  
+  
+  src = createImage(640, 480, RGB);
+  opencv = new OpenCV(this, 640, 480);
 
-  opencv.blur(1);
-  opencv.threshold(120);
-
-//  contour = opencv.findContours(false, true).get(3).getPolygonApproximation();
-
-  card = createImage(cardWidth, cardHeight, ARGB); 
-  opencv.toPImage(warpPerspective(window.getPoints(), cardWidth, cardHeight), card);
+  focus = createImage(focusWidth, focusHeight, ARGB); 
+  opencv.toPImage(warpPerspective(window.getPoints(), focusWidth, focusHeight), focus);
 }
 
 Mat getPerspectiveTransformation(ArrayList<PVector> inputPoints, int w, int h) {
@@ -61,21 +62,28 @@ Mat warpPerspective(ArrayList<PVector> inputPoints, int w, int h) {
 
 void draw() {
   clear();
-  image(src, 0, 0);
+  if (cam.available()) { 
+    // Reads the new frame
+    cam.read(); 
+    
+  } 
+  
+  opencv.loadImage(cam);
+  
+  image(cam, 0, 0); 
   noFill(); 
   stroke(0, 255, 0); 
   strokeWeight(4);
-//  contour.draw();
   fill(255, 0);
   ArrayList<PVector> points = window.getPoints();
   for (int i = 0; i < points.size(); i++) {
     text(i, points.get(i).x, points.get(i).y);
   }
-  opencv.toPImage(warpPerspective(window.getPoints(), cardWidth, cardHeight), card);
+  opencv.toPImage(warpPerspective(window.getPoints(), focusWidth, focusHeight), focus);
 
   pushMatrix();
-  translate(src.width, 0);
-  image(card, 0, 0);
+  translate(640, 0);
+  image(focus, 0, 0);
   popMatrix();
   
   window.draw();
